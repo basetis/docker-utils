@@ -6,12 +6,25 @@ const { argv } = require('yargs')
 const Docker = require('dockerode')
 process.on('unhandledRejection', up => { throw up })
 
-const [ containerId, imageId ] = argv._
+let [ containerId, imageId ] = argv._
 
 ;(async function main() {
     // Connect to docker
     const engine = new Docker()
     const container = engine.getContainer(containerId)
+
+    // If only a tag was given, attempt to resolve repo of running container
+    if (imageId.startsWith(':')) {
+        const { Image } = await container.inspect()
+        const { RepoTags } = await engine.getImage(Image).inspect()
+        const repos = new Set(RepoTags.map(x => /^(.+)(:.+?)$/.exec(x)[1]))
+        if (repos.size === 0)
+            throw Error("couldn't determine image tag of running container")
+        if (repos.size > 1)
+            throw Error(`image corresponds to more than one repo: ${JSON.stringify([...repos])}`)
+        imageId = [...repos][0] + imageId
+        console.log(`Resolved to ${imageId}`)
+    }
 
     // Check image exists, pull otherwise
     const image = engine.getImage(imageId)
