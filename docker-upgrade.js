@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 //@ts-check
 
+const { once } = require('events')
 const { argv } = require('yargs')
 const Docker = require('dockerode')
 process.on('unhandledRejection', up => { throw up })
@@ -19,7 +20,9 @@ const [ containerId, imageId ] = argv._
     } catch (e) {
         if (e.statusCode !== 404) throw e
         console.log('Pulling image...')
-        await engine.pull(imageId)
+        const req = await engine.pull(imageId)
+        await once(req, 'end')
+        await image.inspect()
     }
 
     // Check container exists and get its config
