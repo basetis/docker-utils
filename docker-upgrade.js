@@ -53,7 +53,8 @@ let [ containerId, imageId ] = argv._
         // overrides
         Image: imageId,
     })
-    await newContainer.start()
+    if (!['exited', 'created'].includes(containerInfo.State.Status))
+        await newContainer.start()
 
     console.log('Done.')
 })()
