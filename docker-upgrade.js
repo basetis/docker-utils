@@ -4,6 +4,8 @@
 const { once } = require('events')
 const { argv } = require('yargs')
 const Docker = require('dockerode')
+const imageExists = image => image.inspect().then(() => true,
+    e => (e.statusCode === 404 ? false : Promise.reject(e)))
 process.on('unhandledRejection', up => { throw up })
 
 let [ containerId, imageId ] = argv._
@@ -28,14 +30,13 @@ let [ containerId, imageId ] = argv._
 
     // Check image exists, pull otherwise
     const image = engine.getImage(imageId)
-    try {
-        await image.inspect()
-    } catch (e) {
-        if (e.statusCode !== 404) throw e
+    if (!await imageExists(image)) {
         console.log('Pulling image...')
         const req = await engine.pull(imageId)
+        req.resume()
         await once(req, 'end')
-        await image.inspect()
+        if (!await imageExists(image))
+            throw Error('Could not pull image')
     }
 
     // Check container exists and get its config
