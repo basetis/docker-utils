@@ -1,0 +1,16 @@
+{
+  "name": "docker-utils",
+  "version": "1.0.0",
+  "private": true,
+  "license": "ISC",
+  "dependencies": {
+    "dockerode": "^3.2.1",
+    "yargs": "^16.0.3"
+  },
+  "devDependencies": {
+    "@types/dockerode": "^2.5.34"
+  },
+  "bin": {
+    "docker-upgrade": "docker-upgrade.js"
+  }
+}
