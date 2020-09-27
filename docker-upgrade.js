@@ -2,20 +2,31 @@
 //@ts-check
 
 const { once } = require('events')
-const { argv } = require('yargs')
 const Docker = require('dockerode')
 const imageExists = image => image.inspect().then(() => true,
     e => (e.statusCode === 404 ? false : Promise.reject(e)))
 process.on('unhandledRejection', up => { throw up })
 
-let [ containerId, imageId ] = argv._
+/** @type {{ argv: any }} */
+const yargs = require('yargs')
+    .command('$0 <container> <image_tag>',
+        'Re-launch a container with a new image, preserving its config.')
+    .option('pull', {
+        description: 'Always pull the image first (yes), only pull if not present (auto), or fail if not present (no)',
+        choices: [ 'auto', 'yes', 'no' ],
+        default: 'auto',
+    })
+
+/** @type {{ argv: { container: string, image_tag: string, pull: string }}} */
+const { argv } = yargs
 
 ;(async function main() {
     // Connect to docker
     const engine = new Docker()
-    const container = engine.getContainer(containerId)
+    const container = engine.getContainer(argv.container)
 
     // If only a tag was given, attempt to resolve repo of running container
+    let imageId = argv.image_tag
     if (imageId.startsWith(':')) {
         const { Image } = await container.inspect()
         const { RepoTags } = await engine.getImage(Image).inspect()
@@ -30,7 +41,10 @@ let [ containerId, imageId ] = argv._
 
     // Check image exists, pull otherwise
     const image = engine.getImage(imageId)
-    if (!await imageExists(image)) {
+    const exists = await imageExists(image)
+    if (argv.pull === 'no' && !exists)
+        throw Error("Image doesn't exist")
+    if (argv.pull === 'yes' || (argv.pull === 'auto' && !exists)) {
         console.log('Pulling image...')
         const req = await engine.pull(imageId)
         req.resume()
