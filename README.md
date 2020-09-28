@@ -19,4 +19,5 @@ To minimize downtime, the image is pulled first if necessary.
 Then the container is stopped, removed, and a new one is started.
 
 For convenience, you can just supply `:TAG` and the repo part will
-be detected from the running container.
+be detected from the running container. Or, if no image is passed,
+the same tag will be pulled and used.
