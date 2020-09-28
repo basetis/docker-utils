@@ -1,7 +1,6 @@
 {
-  "name": "docker-utils",
+  "name": "@basetis/docker-utils",
   "version": "1.0.0",
-  "private": true,
   "license": "ISC",
   "dependencies": {
     "dockerode": "3.2.1",
