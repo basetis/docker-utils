@@ -18,34 +18,23 @@ const yargs = require('yargs')
 
 /** @type {{ argv: { container: string, image_tag: string, pull: boolean? }}} */
 const { argv } = yargs
-if (!argv.image_tag && argv.pull === undefined)
-    argv.pull = true
 
 ;(async function main() {
     // Connect to docker
     const engine = new Docker()
     const container = engine.getContainer(argv.container)
-    const { Image: currentImage } = await container.inspect()
+    const { Config: { Image: currentImage } } = await container.inspect()
 
     let imageId = argv.image_tag
     if (!imageId) {
-        // If no image tag was given, use image tag of running container
-        const { RepoTags } = await engine.getImage(currentImage).inspect()
-        if (RepoTags.length === 0)
-            throw Error("couldn't determine image tag of running container")
-        if (RepoTags.length > 1)
-            throw Error(`image corresponds to more than one tag: ${JSON.stringify(RepoTags)}`)
-        imageId = RepoTags[0]
+        // If no image tag was given, use current one
+        imageId = currentImage
+        if (argv.pull === undefined) argv.pull = true
         console.log(`Resolved to ${imageId}`)
     } else if (imageId.startsWith(':')) {
-        // If only a tag was given, attempt to resolve repo of running container
-        const { RepoTags } = await engine.getImage(currentImage).inspect()
-        const repos = new Set(RepoTags.map(x => /^(.+)(:.+?)$/.exec(x)[1]))
-        if (repos.size === 0)
-            throw Error("couldn't determine image tag of running container")
-        if (repos.size > 1)
-            throw Error(`image corresponds to more than one repo: ${JSON.stringify([...repos])}`)
-        imageId = [...repos][0] + imageId
+        // If only a tag was given, combine with running image
+        const repo = /^(.+)(:.+?)?$/.exec(currentImage)[1]
+        imageId = repo + imageId
         console.log(`Resolved to ${imageId}`)
     }
 
