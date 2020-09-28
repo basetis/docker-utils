@@ -62,9 +62,10 @@ const { argv } = yargs
 
     console.log('Launching new container...')
     const { Config, HostConfig, NetworkSettings, Name: name } = containerInfo
+    const EndpointsConfig = getEndpointsConfig(NetworkSettings.Networks)
     const newContainer = await engine.createContainer({
         name, ...Config, HostConfig,
-        NetworkingConfig: NetworkSettings.Networks,
+        NetworkingConfig: { EndpointsConfig },
         // overrides
         Image: imageId,
     })
@@ -73,3 +74,14 @@ const { argv } = yargs
 
     console.log('Done.')
 })()
+
+function getEndpointsConfig(Networks) {
+    const EndpointsConfig = {}
+    Object.keys(Networks).forEach(key => {
+        const value = { ...Networks[key] }
+        EndpointsConfig[key] = value
+        value.IPAMConfig = { IPv4Address: value.IPAddress, ...value.IPAMConfig }
+        delete value.Aliases // FIXME: look into why this is needed
+    })
+    return EndpointsConfig
+}
