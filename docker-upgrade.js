@@ -56,7 +56,8 @@ const { argv } = yargs
     const containerInfo = await container.inspect()
 
     console.log('Stopping & removing...')
-    await container.stop()
+    await container.stop() // ignore 'container already stopped'
+        .catch(e => (e.statusCode !== 304 && Promise.reject(e)))
     await container.remove()
 
     console.log('Launching new container...')
