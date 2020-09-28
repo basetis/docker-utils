@@ -12,12 +12,11 @@ const yargs = require('yargs')
     .command('$0 <container> <image_tag>',
         'Re-launch a container with a new image, preserving its config.')
     .option('pull', {
-        description: 'Always pull the image first (yes), only pull if not present (auto), or fail if not present (no)',
-        choices: [ 'auto', 'yes', 'no' ],
-        default: 'auto',
+        description: "Pull the image first. If not set, the image will only be pulled if it doesn't exist, or if no image tag was passed.",
+        type: 'boolean',
     })
 
-/** @type {{ argv: { container: string, image_tag: string, pull: string }}} */
+/** @type {{ argv: { container: string, image_tag: string, pull: boolean? }}} */
 const { argv } = yargs
 
 ;(async function main() {
@@ -42,9 +41,9 @@ const { argv } = yargs
     // Check image exists, pull otherwise
     const image = engine.getImage(imageId)
     const exists = await imageExists(image)
-    if (argv.pull === 'no' && !exists)
+    if (argv.pull === false && !exists)
         throw Error("Image doesn't exist")
-    if (argv.pull === 'yes' || (argv.pull === 'auto' && !exists)) {
+    if (argv.pull === true || (argv.pull === undefined && !exists)) {
         console.log('Pulling image...')
         const req = await engine.pull(imageId)
         req.resume()
