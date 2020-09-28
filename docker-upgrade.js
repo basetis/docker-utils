@@ -2,6 +2,7 @@
 //@ts-check
 
 const { once } = require('events')
+const { spawn } = require('child_process')
 const Docker = require('dockerode')
 const imageExists = image => image.inspect().then(() => true,
     e => (e.statusCode === 404 ? false : Promise.reject(e)))
@@ -45,11 +46,10 @@ const { argv } = yargs
         throw Error("Image doesn't exist")
     if (argv.pull === true || (argv.pull === undefined && !exists)) {
         console.log('Pulling image...')
-        const req = await engine.pull(imageId)
-        req.resume()
-        await once(req, 'end')
-        if (!await imageExists(image))
-            throw Error('Could not pull image')
+        const child = spawn('docker', ['pull', imageId])
+        const [code, signal] = await once(child, 'exit')
+        if (code || signal)
+            throw Error("Couldn't pull image")
     }
 
     // Check container exists and get its config
