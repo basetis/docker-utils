@@ -75,7 +75,7 @@ const { argv } = yargs
 })()
 
 function getEndpointsConfig(Networks) {
-    const EndpointsConfig = {}
+    const EndpointsConfig = { ...Networks }
     Object.keys(Networks).forEach(key => {
         const value = { ...Networks[key] }
         EndpointsConfig[key] = value
