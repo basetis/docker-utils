@@ -33,7 +33,7 @@ const { argv } = yargs
         console.log(`Resolved to ${imageId}`)
     } else if (imageId.startsWith(':')) {
         // If only a tag was given, combine with running image
-        const repo = /^(.+)(:.+?)?$/.exec(currentImage)[1]
+        const repo = /^(.+?)(:[^:]+)?$/.exec(currentImage)[1]
         imageId = repo + imageId
         console.log(`Resolved to ${imageId}`)
     }
